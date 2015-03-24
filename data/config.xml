@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<openerp>
+    <data noupdate="1">
+
+        <record id="freeze_base_url" model="ir.config_parameter">
+            <field name="key">web.base.url.freeze</field>
+            <field name="value">True</field>
+        </record>
+
+    </data>
+</openerp>

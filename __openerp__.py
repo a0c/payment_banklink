@@ -27,14 +27,17 @@
     'description': """
 Banklink
 ========
-Provides a base for implementing Estonian banklinks ('pangalink') for SEB, Swedbank, Nordea etc.
+Provides a base for implementing Estonian banklinks (*pangalink*) for SEB, Swedbank, Nordea etc.
 
 Working examples can be found in modules payment_seb and payment_swedbank.
+
+Be sure to update the **web.base.url** system parameter in Settings > Parameters > System Parameters to the right HTTPS URL.
 """,
     'website': 'www.avanser.ee',
     'depends': ['payment'],
     'external_dependencies': {'python': ['M2Crypto', 'humanize']},
     'data': [
         'views/banklink.xml',
+        'data/config.xml',
     ],
 }
