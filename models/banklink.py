@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import base64
-import humanize
 from dateutil import parser as DP
 from datetime import datetime as DT, timedelta
 import logging
@@ -10,10 +9,11 @@ import pytz
 import time
 import urlparse
 
+import humanize
+
 from openerp.exceptions import ValidationError
 from openerp.tools import float_compare
 from openerp import api, fields, models
-
 from openerp.addons.payment_banklink.controllers.main import banklink_controller
 
 
@@ -54,13 +54,14 @@ class BanklinkPaymentAcquirer(models.Model):
     def banklink_form_generate_values(self, cr, uid, id, partner_values, tx_values, context=None):
         acquirer = self.browse(cr, uid, id, context=context)
         base_url = acquirer.get_base_url()
+        so = self.get_order(tx_values['reference'], acquirer.sudo().env['sale.order'])
 
         banklink_tx_values = dict(tx_values)
         banklink_tx_values.update({
             'VK_SERVICE': u'1012',
             'VK_VERSION': u'008',
             'VK_SND_ID': u'%s' % acquirer.VK_SND_ID,
-            'VK_STAMP': u'%s' % self.get_order_id(cr, uid, tx_values['reference']),
+            'VK_STAMP': u'%s' % so.id,
             'VK_AMOUNT': u'%s' % tx_values['amount'],
             'VK_CURR': u'EUR',
             'VK_REF': u'%s' % (tx_values['partner'].ref or ''),
@@ -70,6 +71,7 @@ class BanklinkPaymentAcquirer(models.Model):
             'VK_DATETIME': self.generate_date(),
             'VK_ENCODING': u'UTF-8',
             'VK_LANG': LANG.get(tx_values['partner'].lang, u'EST'),
+            'show_button': not so.payment_tx_id or so.payment_tx_id.state != 'done'
         })
         banklink_tx_values['VK_MAC'] = self.encrypt_MAC_string(banklink_tx_values, acquirer.get_key('%s_get_private_key'))
         return partner_values, banklink_tx_values
@@ -81,9 +83,10 @@ class BanklinkPaymentAcquirer(models.Model):
     def _prepare_msg(self, acquirer, tx_values, partner_values):
         return acquirer.msg_tmpl % tx_values['reference']
 
-    def get_order_id(self, cr, uid, order_name):
-        so_ids = self.pool.get('sale.order').search(cr, uid, [('name', '=', order_name)], limit=1)
-        return so_ids[0] if so_ids else False
+    def get_order(self, order_name, so_obj):
+        so = so_obj.search([('name', '=', order_name)], limit=1)
+        assert so, 'Could not find Sale Order with name %s' % order_name
+        return so[0]
 
     def get_key(self, key_getter):
         key = self.get_method_value(key_getter)
@@ -116,6 +119,11 @@ class BanklinkPaymentAcquirer(models.Model):
 
     def generate_date(self):
         return DT.now(tz=CUR_TIMEZONE).strftime(BANKLINK_DATETIME_FORMAT)
+
+    def _wrap_payment_block(self, cr, uid, html_block, amount, currency_id, context=None):
+        if not html_block.strip():
+            return ''
+        return super(BanklinkPaymentAcquirer, self)._wrap_payment_block(cr, uid, html_block, amount, currency_id, context=context)
 
 
 class BanklinkTransaction(models.Model):
