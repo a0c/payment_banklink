@@ -14,7 +14,9 @@
                             <field name="VK_SND_ID"/>
                             <field name="msg_tmpl"/>
                         </group>
-                        <group name="banklink"/>
+                        <group name="banklink">
+                            <field name="pass_PRIVATE_KEY" password="True"/>
+                        </group>
                     </group>
                 </xpath>
             </field>

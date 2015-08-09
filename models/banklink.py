@@ -50,6 +50,7 @@ class BanklinkPaymentAcquirer(models.Model):
     bank_id = fields.Char('Bank ID', size=16, readonly=1)
     VK_SND_ID = fields.Char('Merchant ID (VK_SND_ID)', size=16)
     msg_tmpl = fields.Char('Explanation Template', size=255, default=_default_msg)
+    pass_PRIVATE_KEY = fields.Char('Private Key Password', size=255)
 
     def banklink_form_generate_values(self, cr, uid, id, partner_values, tx_values, context=None):
         acquirer = self.browse(cr, uid, id, context=context)
@@ -73,7 +74,7 @@ class BanklinkPaymentAcquirer(models.Model):
             'VK_LANG': LANG.get(tx_values['partner'].lang, u'EST'),
             'show_button': not so.payment_tx_id or so.payment_tx_id.state != 'done'
         })
-        banklink_tx_values['VK_MAC'] = self.encrypt_MAC_string(banklink_tx_values, acquirer.get_key('%s_get_private_key'))
+        banklink_tx_values['VK_MAC'] = self.encrypt_MAC_string(banklink_tx_values, acquirer.get_key('%s_get_private_key'), acquirer.pass_PRIVATE_KEY)
         return partner_values, banklink_tx_values
 
     @api.model
@@ -101,8 +102,8 @@ class BanklinkPaymentAcquirer(models.Model):
     def full_path(self, key):
         return os.path.isabs(key) and str(key) or str(os.path.join(CUR_PATH, '../../payment_%s' % self.provider, key))
 
-    def encrypt_MAC_string(self, tx_values, priv_key):
-        priv_key = EVP.load_key(priv_key)
+    def encrypt_MAC_string(self, tx_values, priv_key, priv_pass):
+        priv_key = EVP.load_key(priv_key, lambda *args: str(priv_pass))
         priv_key.sign_init()
         priv_key.sign_update(self.generate_MAC_string(tx_values))
         mac = priv_key.sign_final()
