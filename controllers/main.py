@@ -32,6 +32,7 @@ class banklink_controller(http.Controller):
 
     def banklink_validate_data(self, **post):
         cr, context = request.cr, request.context
+        context = dict(context, no_quotation_send=True)
         return request.registry['payment.transaction'].form_feedback(cr, SUPERUSER_ID, post, 'banklink', context=context)
 
 

@@ -34,7 +34,7 @@ Working examples can be found in modules payment_seb and payment_swedbank.
 Be sure to update the **web.base.url** system parameter in Settings > Parameters > System Parameters to the right HTTPS URL.
 """,
     'website': 'www.avanser.ee',
-    'depends': ['payment'],
+    'depends': ['payment', 'sale'],
     'external_dependencies': {'python': ['M2Crypto', 'humanize']},
     'data': [
         'views/banklink.xml',
